@@ -304,7 +304,7 @@ function get_user_data(user) {
             user:get_username(user),
             program:'simple_chat_program',
             ct_answer:80,
-            ct_speack:10,
+            ct_speack:0.09,
             is_group:false,
             index:0,
         })
@@ -320,7 +320,7 @@ function get_group_data(group) {
             group:group.title,
             program:'group_chat_program',
             ct_answer:60,
-            ct_speack:10,
+            ct_speack:0.03,
             is_group:true,
             index:0,
         })
