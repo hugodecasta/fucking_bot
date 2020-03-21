@@ -419,3 +419,6 @@ load_memory()
 bot.startPolling()
 setInterval(function() {
 },30*1000)
+
+log('"bot launched"')
+console.log('bot launched')
