@@ -292,12 +292,16 @@ function get_phrases(program_name, index) {
 
 // ---GET MEM DATA
 
+function get_username(user) {
+    return user.first_name
+}
+
 function get_user_data(user) {
     if(!(user.id in memory)) {
         set_mem(user.id,{
             id:user.id,
             base_user:user,
-            user:user.username,
+            user:get_username(user),
             program:'simple_chat_program',
             ct_answer:80,
             ct_speack:10,
@@ -339,7 +343,7 @@ function del_mem(id) {
 // ----------- MESSAGES HANDLING
 
 function on_added_to_group(user,group) {
-    log(user.username,'added','bot','from',group.title)
+    log(get_username(user),'added','bot','from',group.title)
     let user_data = get_user_data(user)
     user_data.program = 'simple_chat_program'
     user_data.ct_answer = 80
@@ -350,7 +354,7 @@ function on_added_to_group(user,group) {
 }
 
 function on_remove_from_group(user,group) {
-    log(user.username,'removed','bot','from',group.title)
+    log(get_username(user),'removed','bot','from',group.title)
     let user_data = get_user_data(user)
     user_data.program = 'removed_from_group_program'
     user_data.index = 0
@@ -362,11 +366,11 @@ function on_remove_from_group(user,group) {
 
 function on_someone_added_to_group(user,group,added) {
 
-    log(user.username,'added',removed.username,'from',group.title)
+    log(get_username(user),'added',get_username(added),'from',group.title)
 
     let group_data = get_group_data(group)
     group_data.program = 'someone_added_to_group'
-    group_data.added = added.username
+    group_data.added = get_username(added)
     answer_group(user,group,'')
 
     group_data.program = 'group_chat_program'
@@ -375,18 +379,18 @@ function on_someone_added_to_group(user,group,added) {
 
 function on_someone_removed_from_group(user,group,removed) {
 
-    log(user.username,'removed',removed.username,'from',group.title)
+    log(get_username(user),'removed',get_username(removed),'from',group.title)
 
     let removed_user_data = get_user_data(removed)
     removed_user_data.program = 'he_was_removed_from_group'
     removed_user_data.index = 0
     removed_user_data.group = group.title
-    removed_user_data.remover = user.username
+    removed_user_data.remover = get_username(user)
     answer_user(removed,'')
 
     let group_data = get_group_data(group)
     group_data.program = 'someone_removed_from_group'
-    group_data.removed = removed.username
+    group_data.removed = get_username(removed)
     answer_group(user,group,'')
 
     group_data.program = 'group_chat_program'
@@ -394,7 +398,7 @@ function on_someone_removed_from_group(user,group,removed) {
 }
 
 function on_group_message(text,user,group) {
-    log(user.username,'said',text,'to',group.title)
+    log(get_username(user),'said',text,'to',group.title)
     if(chance(get_group_data(group).ct_answer)) {
         answer_group(user,group,text)
     }
@@ -505,7 +509,7 @@ function handle_incomming_message(message) {
     let group = message.chat
     let text = message.text
 
-    let is_group_message = group.type == 'group'
+    let is_group_message = group.type.includes('group')
 
     let some_added = 'new_chat_member' in message
     let bot_was_added = 
