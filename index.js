@@ -253,7 +253,7 @@ function create_base() {
 }
 
 function parse_phrase(phrase, base) {
-    return phrase.replace(new RegExp('{(\\w+)}','g'),function(data,base_prop) {
+    return phrase.replace(new RegExp('{(.*?)}','g'),function(data,base_prop) {
         let pretendents = base[base_prop]
         return choice(pretendents)
     })
