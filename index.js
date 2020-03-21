@@ -28,8 +28,14 @@ let analysis_base = function() {
         let data = memory[id]
         if(data.is_group) {
             base.groups += data.group+':'+data.id+'\n'
+            base['group '+data.group] = JSON.stringify(data)
         } else {
-            base.users += data.user+':'+data.id+':'+data.program+':'+data.index+'\n'
+            let program = data.program
+            if(program == 'analysis') {
+                program = data.old_program+'(analysis)'
+            }
+            base.users += data.user+':'+data.id+':'+program+':'+data.index+'\n'
+            base['user '+data.user] = JSON.stringify(data)
         }
     }
     base.users = base.users != ''?base.users:'no users'
@@ -86,7 +92,7 @@ let injures = {
     'person_injure':['fucker','son of a bitch','great pig fucker','bitch','fucker','bastard','ass hole','mother fucker'],
     'adj_injures':['fucking','bitchy','slut congress','cow fuckers guys'],
     'action_injures':['go fuck yourself','shut the fuck up','go eat your fucking mother\'s shit','fuck you','suck you fucking fathers dick','lick your mothers ass','lick my balls'],
-    'against_injures':['I hate you','Im tired of you','I shit on your face',''],
+    'against_injures':['I hate you','Im tired of you','I shit on your face'],
     'before_you':['you ',''],
     'members_injures':['fuckers','ass holes','pigs','fuckers','pig eating congress','big fat cock suckers']
 }
@@ -146,6 +152,13 @@ let speack_program = {
             'Haha, {exclam_injures}, this {adj_injures} {person_injure} of {removed} was removed from the {adj_injures} group !',
             'Yes {user} kick this {person_injure} outtaf here !',
             'We hate this {person_injure}, {removed} was no use here, good {adj_injures} job {user}'
+        ]
+    ],
+
+    you_added_me_to_group : [
+        [
+            'Why {noun_injures} did you {person_injure} added me to this {adj_injures} {group} chat ??!',
+            '{before_you}{person_injure}, {against_injures} for adding me to this {adj_injures} chat !!'
         ]
     ],
 
@@ -285,7 +298,7 @@ function get_user_data(user) {
             user:user.username,
             program:'simple_chat_program',
             ct_answer:80,
-            ct_speack:5,
+            ct_speack:10,
             is_group:false,
             index:0,
         })
@@ -326,8 +339,11 @@ function del_mem(id) {
 function on_added_to_group(user,group) {
     console.log(user.username,'added','bot','from',group.title)
     let user_data = get_user_data(user)
-    user_data.program = 'group_chat_program'
-    user_data.index = 0
+    user_data.program = 'simple_chat_program'
+    user_data.ct_answer = 80
+    user_data.ct_speack = 10
+    user_data.index = 1000
+    answer_generic(user.id,speack_program['you_added_me_to_group'][0],create_base(user_data,get_group_data(group),injures))
     answer_group(user,group,'')
 }
 
@@ -377,7 +393,7 @@ function on_someone_removed_from_group(user,group,removed) {
 
 function on_group_message(text,user,group) {
     console.log(user.username,'said',text,'to',group.title)
-    if(chance(get_group_data(grou).ct_answer)) {
+    if(chance(get_group_data(group).ct_answer)) {
         answer_group(user,group,text)
     }
 }
@@ -437,6 +453,7 @@ function answer_generic(chatid, phrases, base) {
     if(base.program == 'analysis') {
         return
     }
+    console.log()
     let phrase = choice(phrases)
     let final_phrase = parse_phrase(phrase, base)
     send(chatid,final_phrase)
@@ -481,8 +498,9 @@ function abs_send(chat_id,string) {
  
 // -------------------------------------- HANDLERS
 
-bot.on('message', message => {
+function handle_incomming_message(message) {
 
+    console.log(message)
 
     log('message_in',message)
 
@@ -495,7 +513,8 @@ bot.on('message', message => {
     let some_added = 'new_chat_member' in message
     let bot_was_added = 
         (some_added && message.new_chat_member.id == my_id) 
-        || 'group_chat_created' in message
+        || ('group_chat_created' in message)
+    some_added = some_added | bot_was_added
 
     let some_removed = 'left_chat_member' in message
     let bot_was_removed = some_removed && message.left_chat_member.id == my_id
@@ -518,7 +537,9 @@ bot.on('message', message => {
     } else {
         on_group_message(text,user,group)
     }
-})
+}
+
+bot.on('message', handle_incomming_message)
 
 // -------------------------------------- INIT
 
