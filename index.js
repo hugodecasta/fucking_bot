@@ -347,7 +347,7 @@ function on_added_to_group(user,group) {
     let user_data = get_user_data(user)
     user_data.program = 'simple_chat_program'
     user_data.ct_answer = 80
-    user_data.ct_speack = 10
+    user_data.ct_speack = 0.09
     user_data.index = 1000
     answer_generic(user.id,speack_program['you_added_me_to_group'][0],create_base(user_data,get_group_data(group),injures))
     answer_group(user,group,'')
