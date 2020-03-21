@@ -90,11 +90,11 @@ let injures = {
     'exclam_injures':['fuck','oh fuck','what the fuck','fucking slut'],
     'noun_injures':['the fuck','great fucking god'],
     'person_injure':['fucker','son of a bitch','great pig fucker','bitch','fucker','bastard','ass hole','mother fucker'],
-    'adj_injures':['fucking','bitchy','slut congress','cow fuckers guys'],
+    'adj_injures':['fucking','bitchy','anoyingly','assly','mother fucking'],
     'action_injures':['go fuck yourself','shut the fuck up','go eat your fucking mother\'s shit','fuck you','suck you fucking fathers dick','lick your mothers ass','lick my balls'],
     'against_injures':['I hate you','Im tired of you','I shit on your face'],
     'before_you':['you ',''],
-    'members_injures':['fuckers','ass holes','pigs','fuckers','pig eating congress','big fat cock suckers']
+    'members_injures':['fuckers','ass holes','pigs','fuckers','pig eating congress','big fat cock suckers','slut congress','cow fuckers guys']
 }
 
 // ----------- PROGRAMS
