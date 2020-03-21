@@ -45,7 +45,7 @@ let analysis_base = function() {
 
 let user_commands = {
     'Analysis':function(user_data) {
-        console.log(user_data.user,'set bot to analysis mode')
+        log(user_data.user,'set bot to analysis mode')
         abs_send(user_data.id,'|-|')
         user_data.old_program = copy(user_data.program)
         user_data.program = 'analysis'
@@ -55,7 +55,7 @@ let user_commands = {
         if(user_data.program != 'analysis') {
             return true
         }
-        console.log(user_data.user,'set bot to normal mode')
+        log(user_data.user,'set bot to normal mode')
         send(user_data.id,':-)',1000)
         user_data.program = user_data.old_program
         set_mem(user_data.id,user_data)
@@ -73,11 +73,11 @@ let user_commands = {
     },
     'default':function(text,user_data) {
         if(user_data.program == 'analysis') {
-            console.log('execute analysis command',text)
+            log('execute analysis command',text)
             abs_send(user_data.id, parse_phrase(text,analysis_base()))
             return
         }
-        console.log(user_data.user,'said',text)
+        log(user_data.user,'said',text)
         if(chance(user_data.ct_answer)) {
             answer_user(user_data.base_user,text)
         }
@@ -221,8 +221,10 @@ let letter_type_time = [30,50,100,200]
 
 // ----------- INNER
 
-function log(name,data) {
-    logger(name+':::'+JSON.stringify(data),'log.log')
+function log() {
+    console.log(...arguments)
+    let str = Array.from(arguments).map(elm => JSON.stringify(elm)).join('::')
+    logger(str,'log.log')
 }
 
 function choice(choice_array) {
@@ -337,7 +339,7 @@ function del_mem(id) {
 // ----------- MESSAGES HANDLING
 
 function on_added_to_group(user,group) {
-    console.log(user.username,'added','bot','from',group.title)
+    log(user.username,'added','bot','from',group.title)
     let user_data = get_user_data(user)
     user_data.program = 'simple_chat_program'
     user_data.ct_answer = 80
@@ -348,7 +350,7 @@ function on_added_to_group(user,group) {
 }
 
 function on_remove_from_group(user,group) {
-    console.log(user.username,'removed','bot','from',group.title)
+    log(user.username,'removed','bot','from',group.title)
     let user_data = get_user_data(user)
     user_data.program = 'removed_from_group_program'
     user_data.index = 0
@@ -360,7 +362,7 @@ function on_remove_from_group(user,group) {
 
 function on_someone_added_to_group(user,group,added) {
 
-    console.log(user.username,'added',removed.username,'from',group.title)
+    log(user.username,'added',removed.username,'from',group.title)
 
     let group_data = get_group_data(group)
     group_data.program = 'someone_added_to_group'
@@ -373,7 +375,7 @@ function on_someone_added_to_group(user,group,added) {
 
 function on_someone_removed_from_group(user,group,removed) {
 
-    console.log(user.username,'removed',removed.username,'from',group.title)
+    log(user.username,'removed',removed.username,'from',group.title)
 
     let removed_user_data = get_user_data(removed)
     removed_user_data.program = 'he_was_removed_from_group'
@@ -392,7 +394,7 @@ function on_someone_removed_from_group(user,group,removed) {
 }
 
 function on_group_message(text,user,group) {
-    console.log(user.username,'said',text,'to',group.title)
+    log(user.username,'said',text,'to',group.title)
     if(chance(get_group_data(group).ct_answer)) {
         answer_group(user,group,text)
     }
@@ -453,7 +455,6 @@ function answer_generic(chatid, phrases, base) {
     if(base.program == 'analysis') {
         return
     }
-    console.log()
     let phrase = choice(phrases)
     let final_phrase = parse_phrase(phrase, base)
     send(chatid,final_phrase)
@@ -463,7 +464,7 @@ function answer_generic(chatid, phrases, base) {
 
 function send(chat_id,string,time=null) {
 
-    console.log('saying:',string)
+    log('saying:',string)
 
     // ---- compute time
 
@@ -474,8 +475,6 @@ function send(chat_id,string,time=null) {
             time += letter_time
         }
     }
-
-    log('send',{chat_id,string,time})
 
     // ---- send "typing" action
 
@@ -500,9 +499,7 @@ function abs_send(chat_id,string) {
 
 function handle_incomming_message(message) {
 
-    console.log(message)
-
-    log('message_in',message)
+    log(message)
 
     let user = message.from
     let group = message.chat
@@ -558,11 +555,10 @@ setInterval(function() {
         } else {
             program = 'user_speack'
         }
-        console.log(memory)
+        log(memory)
         answer_generic(data.id, speack_program[program][0], create_base(data,injures))
     }
 
 },30*1000)
 
-log('"bot launched"')
-console.log('bot launched')
+log('bot launched')
