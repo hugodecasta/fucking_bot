@@ -1,0 +1,28 @@
+{
+  "name": "fucking_bot",
+  "version": "0.1.0",
+  "description": "A telegram injuring bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hugodecasta/fucking_bot.git"
+  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "AI"
+  ],
+  "author": "Hugo Castaneda",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hugodecasta/fucking_bot/issues"
+  },
+  "homepage": "https://github.com/hugodecasta/fucking_bot#readme",
+  "dependencies": {
+    "log-to-file": "^2.0.2",
+    "slimbot": "^4.6.0"
+  }
+}
