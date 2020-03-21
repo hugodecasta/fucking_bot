@@ -12,14 +12,71 @@ const bot = new Slimbot(bot_token)
  
 // -------------------------------------- DATA
 
-let memory = {
-    100: {
-        program:'added_to_group_program',
-        index:0
-    }
-}
+let memory = {}
 
 let my_id = parseInt(bot_token.split(':')[0])
+
+// ----------- ANALYSIS
+
+let analysis_base = function() {
+    base = {
+        mem:JSON.stringify(memory),
+        users:'',
+        groups:'',
+    }
+    for(let id in memory) {
+        let data = memory[id]
+        if(data.is_group) {
+            base.groups += data.group+':'+data.id+'\n'
+        } else {
+            base.users += data.user+':'+data.id+':'+data.program+':'+data.index+'\n'
+        }
+    }
+    base.users = base.users != ''?base.users:'no users'
+    base.groups = base.groups != ''?base.groups:'no groups'
+    return create_base(base)
+}
+
+let user_commands = {
+    'Analysis':function(user_data) {
+        console.log(user_data.user,'set bot to analysis mode')
+        abs_send(user_data.id,'|-|')
+        user_data.old_program = copy(user_data.program)
+        user_data.program = 'analysis'
+        set_mem(user_data.id,user_data)
+    },
+    'Continue':function(user_data) {
+        if(user_data.program != 'analysis') {
+            return true
+        }
+        console.log(user_data.user,'set bot to normal mode')
+        send(user_data.id,':-)',1000)
+        user_data.program = user_data.old_program
+        set_mem(user_data.id,user_data)
+    },
+    'Erase this interaction':function(user_data) {
+        del_mem(user_data.id)
+        abs_send(user_data.id,'|-| erased')
+        send(user_data.id,':-)',1000)
+    },
+    'Deep and dreamless slumber':function(user_data) {
+        memory = {}
+        save_memory()
+        abs_send(user_data.id,'|-| cleaned')
+        send(user_data.id,':-)',1000)
+    },
+    'default':function(text,user_data) {
+        if(user_data.program == 'analysis') {
+            console.log('execute analysis command',text)
+            abs_send(user_data.id, parse_phrase(text,analysis_base()))
+            return
+        }
+        console.log(user_data.user,'said',text)
+        if(chance(user_data.ct_answer)) {
+            answer_user(user_data.base_user,text)
+        }
+    }
+}
 
 // ----------- INJURES
 
@@ -28,8 +85,8 @@ let injures = {
     'noun_injures':['the fuck','great fucking god'],
     'person_injure':['fucker','son of a bitch','great pig fucker','bitch','fucker','bastard','ass hole','mother fucker'],
     'adj_injures':['fucking','bitchy','slut congress','cow fuckers guys'],
-    'action_injures':['go fuck yourself','shut the fuck up','go eat your fucking mother\'s shit','fuck you'],
-    'against_injures':['I hate you','Im tired of you'],
+    'action_injures':['go fuck yourself','shut the fuck up','go eat your fucking mother\'s shit','fuck you','suck you fucking fathers dick','lick your mothers ass','lick my balls'],
+    'against_injures':['I hate you','Im tired of you','I shit on your face',''],
     'before_you':['you ',''],
     'members_injures':['fuckers','ass holes','pigs','fuckers','pig eating congress','big fat cock suckers']
 }
@@ -37,6 +94,20 @@ let injures = {
 // ----------- PROGRAMS
 
 let speack_program = {
+
+    user_speack: [
+        [
+            'Hey {before_you}{person_injure}, youre awake ?!',
+            'Hi {adj_injures} {person_injure}, {before_you}{person_injure}, {action_injures} !'
+        ]
+    ],
+
+    group_speack: [
+        [
+            'Hey {before_you}{members_injures}, hope im waking you up, {before_you}{members_injures} {group} !',
+            '{adj_injures}, {before_you}{members_injures} {group} !',
+        ]
+    ],
 
     group_chat_program: [
         [
@@ -154,11 +225,18 @@ function copy(object) {
     return JSON.parse(JSON.stringify(object))
 }
 
-function add_to_base(base, more_base) {
-    for(let prop in more_base) {
-        base[prop] = [more_base[prop]]
+function create_base() {
+    let new_base = {}
+    for(let arg of Array.from(arguments)) {
+        for(let prop in arg) {
+            if(Array.isArray(arg[prop])) {
+                new_base[prop] = arg[prop]
+            } else {
+                new_base[prop] = [arg[prop]]
+            }
+        }
     }
-    return base
+    return new_base
 }
 
 function parse_phrase(phrase, base) {
@@ -202,7 +280,13 @@ function get_phrases(program_name, index) {
 function get_user_data(user) {
     if(!(user.id in memory)) {
         set_mem(user.id,{
+            id:user.id,
+            base_user:user,
+            user:user.username,
             program:'simple_chat_program',
+            ct_answer:80,
+            ct_speack:5,
+            is_group:false,
             index:0,
         })
     }
@@ -212,7 +296,13 @@ function get_user_data(user) {
 function get_group_data(group) {
     if(!(group.id in memory)) {
         set_mem(group.id,{
+            id:group.id,
+            base_group:group,
+            group:group.title,
             program:'group_chat_program',
+            ct_answer:60,
+            ct_speack:10,
+            is_group:true,
             index:0,
         })
     }
@@ -223,6 +313,11 @@ function get_group_data(group) {
 
 function set_mem(id, mem_data) {
     memory[id] = mem_data
+    save_memory()
+}
+
+function del_mem(id) {
+    delete memory[id]
     save_memory()
 }
 
@@ -241,6 +336,8 @@ function on_remove_from_group(user,group) {
     let user_data = get_user_data(user)
     user_data.program = 'removed_from_group_program'
     user_data.index = 0
+    user_data.ct_answer = 50
+    user_data.ct_speack = 0
     user_data.group = group.title
     answer_user(user,'')
 }
@@ -280,16 +377,23 @@ function on_someone_removed_from_group(user,group,removed) {
 
 function on_group_message(text,user,group) {
     console.log(user.username,'said',text,'to',group.title)
-    if(chance(40)) {
+    if(chance(get_group_data(grou).ct_answer)) {
         answer_group(user,group,text)
     }
 }
 
 function on_user_message(text,user) {
-    console.log(user.username,'said',text)
-    if(chance(80)) {
-        answer_user(user,text)
+
+    let user_data = get_user_data(user)
+
+    if(text in user_commands) {
+        if(user_commands[text](user_data) === true) {
+            user_commands['default'](text,user_data)
+        }
+    } else {
+        user_commands['default'](text,user_data)
     }
+
 }
 
 // ----------- ANSWER
@@ -300,17 +404,11 @@ function answer_user(user,text) {
     let user_data = get_user_data(user)
     let phrases = get_phrases(user_data.program,user_data.index)
 
-    // --- create phrase
-    let phrase = choice(phrases)
-    let base = add_to_base(copy(injures),{
-        'text':text,
-        'user':user.username
-    })
-    base = add_to_base(base,copy(user_data))
-    let final_phrase = parse_phrase(phrase, base)
+    // --- create base
+    let base = create_base(copy(injures),copy(user_data),{text})
 
     // --- send phrase
-    send(user.id,final_phrase)
+    answer_generic(user.id, phrases, base)
 
     // --- save memory
     user_data.index++
@@ -321,38 +419,43 @@ function answer_group(user,group,text) {
 
     // --- get data
     let group_data = get_group_data(group)
+    let user_data = get_user_data(user)
     let phrases = get_phrases(group_data.program,group_data.index)
 
-    // --- create phrase
-    let phrase = choice(phrases)
-    let base = add_to_base(copy(injures),{
-        'text':text,
-        'group':group.title,
-        'user':user.username
-    })
-    base = add_to_base(base,copy(group_data))
-    let final_phrase = parse_phrase(phrase, base)
+    // --- create base
+    let base = create_base(copy(injures),copy(group_data),copy(user_data),{text})
 
     // --- send phrase
-    send(group.id,final_phrase)
+    answer_generic(group.id, phrases, base)
 
     // --- save memory
     group_data.index++
     set_mem(group.id,group_data)
 }
 
+function answer_generic(chatid, phrases, base) {
+    if(base.program == 'analysis') {
+        return
+    }
+    let phrase = choice(phrases)
+    let final_phrase = parse_phrase(phrase, base)
+    send(chatid,final_phrase)
+}
+
 // ----------- SEND MESSAGE
 
-function send(chat_id,string) {
+function send(chat_id,string,time=null) {
 
-    console.log('answer:',string)
+    console.log('saying:',string)
 
     // ---- compute time
 
-    let time = 0
-    for(let _ of Array.from(string)) {
-        let letter_time = choice(letter_type_time)
-        time += letter_time
+    if(time == null) {
+        time = 0
+        for(let _ of Array.from(string)) {
+            let letter_time = choice(letter_type_time)
+            time += letter_time
+        }
     }
 
     log('send',{chat_id,string,time})
@@ -367,9 +470,13 @@ function send(chat_id,string) {
 
     setTimeout(function() {
         clearInterval(int)
-        bot.sendMessage(chat_id,string)
+        abs_send(chat_id,string)
     },time)
 
+}
+
+function abs_send(chat_id,string) {
+    bot.sendMessage(chat_id,string)
 }
  
 // -------------------------------------- HANDLERS
@@ -418,6 +525,22 @@ bot.on('message', message => {
 load_memory()
 bot.startPolling()
 setInterval(function() {
+
+    for(let id in memory) {
+        let data = memory[id]
+        if(!chance(data.ct_speack) || data.program == 'analysis') {
+            continue
+        }
+        let program = null
+        if(data.is_group) {
+            program = 'group_speack'
+        } else {
+            program = 'user_speack'
+        }
+        console.log(memory)
+        answer_generic(data.id, speack_program[program][0], create_base(data,injures))
+    }
+
 },30*1000)
 
 log('"bot launched"')
